@@ -2,6 +2,8 @@
 
 Python script that evenly spaces and formats images on a PDF for printing and making buttons.
 
+![](demo.png)
+
 ## Configuration
 
 Must be placed in a file called `config.toml`. Image paths should be relative to the exe file (or the project root if running from source.)

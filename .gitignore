@@ -4,6 +4,7 @@ config.toml
 *.png
 *.jpg
 *.jpeg
+!/demo.png
 
 # Default Python ignores
 
