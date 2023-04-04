@@ -1,0 +1,13 @@
+{
+    "[python]": {
+        "editor.rulers": [88],
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true,
+        },
+    },
+    "isort.args": ["-l", "88"],
+    "python.formatting.provider": "black",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "workspace",
+}
