@@ -14,7 +14,11 @@ PDF_HEIGHT_PX = int(11 * PDF_DPI)
 
 
 def load_image(
-    image_config: ImageConfig, image_width: int, full_width: int
+    image_config: ImageConfig,
+    image_diameter: int,
+    margin_width: int,
+    border_width: int,
+    full_width: int,
 ) -> Image.Image:
     # load image from file
     im = Image.open(image_config["filename"])
@@ -22,7 +26,7 @@ def load_image(
         raise Exception(f"{image_config['filename']} is not square: {im.size}")
 
     # scale image to needed size
-    im = im.resize((image_width, image_width))
+    im = im.resize((image_diameter,) * 2)
 
     # apply mask by taking minimum of im alpha value and mask value
     # this is to account for transparency at edges of im
@@ -32,16 +36,17 @@ def load_image(
     im = Image.fromarray(na)
     del na, mask
 
-    # create solid colour background circle
-    background = background_ellipse(
-        (full_width, full_width),
+    # create solid colour background circle and black border
+    background = background_ellipse((full_width,) * 2, "#000000")
+    margin = background_ellipse(
+        (image_diameter + 2 * margin_width,) * 2,
         image_config["background"],
     )
+    background.paste(margin, (border_width,) * 2, margin)
 
     # put image over background
-    offset = (full_width - image_width) // 2
-    foreground = Image.new("RGBA", (full_width, full_width), (0,) * 4)
-    foreground.paste(im, (offset, offset))
+    foreground = Image.new("RGBA", (full_width,) * 2, (0,) * 4)
+    foreground.paste(im, (margin_width + border_width,) * 2)
     return Image.alpha_composite(background, foreground)
 
 
@@ -57,15 +62,16 @@ def main():
 
     # extract sizing from config
     output = config["output"]
-    image_width = output["image_diameter_mm"] * PX_PER_MM
-    margin_width = output["margin_width_mm"] * PX_PER_MM
-    min_spacing = output["min_spacing_mm"] * PX_PER_MM
-    page_margin = output["page_margin_mm"] * PX_PER_MM
+    image_diameter = int(output["image_diameter_mm"] * PX_PER_MM)
+    margin_width = int(output["margin_width_mm"] * PX_PER_MM)
+    border_width = int(output["border_width_mm"] * PX_PER_MM)
+    min_spacing = int(output["min_spacing_mm"] * PX_PER_MM)
+    page_margin = int(output["page_margin_mm"] * PX_PER_MM)
     columns = output["columns"]
     rows = output["rows"]
 
     # width of button in px, including solid-colour margin
-    full_width = image_width + 2 * margin_width
+    full_width = image_diameter + 2 * (margin_width + border_width)
 
     # size of the area allotted to a single button
     # includes empty whitespace around the solid-colour margin
@@ -85,7 +91,8 @@ def main():
 
     # load all the images from files
     images = {
-        k: load_image(i, image_width, full_width) for k, i in config["images"].items()
+        k: load_image(i, image_diameter, margin_width, border_width, full_width)
+        for k, i in config["images"].items()
     }
 
     buttons_per_page = columns * rows
@@ -108,7 +115,10 @@ def main():
             image = images[key]
             for _ in range(count):
                 # paste the current button onto the page
-                box = (column * cell_width + col_offset, row * cell_width + row_offset)
+                box = (
+                    column * cell_width + col_offset,
+                    row * cell_height + row_offset,
+                )
                 page.paste(image, box, image)
 
                 # move to the next position

@@ -20,7 +20,8 @@ rows = 5    # number of rows of buttons per page
 columns = 3 # number of columns of buttons per page
 
 image_diameter_mm = 37 # diameter of the actual image to print on the buttons
-margin_width_mm = 6    # width of the solid colour margin (eg. 37 mm diameter and 6 mm margin -> 49 mm total)
+margin_width_mm = 6    # width of the solid colour margin on one side (eg. 37 mm diameter and 6 mm margin -> 49 mm total)
+border_width_mm = 0.5  # width of the black border around the edges of the buttons (set to 0 to disable)
 min_spacing_mm = 2     # minimum allowed spacing between buttons (will display an error if unable to meet this)
 page_margin_mm = 5     # empty margin at the edges of each page
 

@@ -10,10 +10,11 @@ class OutputConfig(TypedDict):
     rows: int
     columns: int
 
-    image_diameter_mm: int
-    margin_width_mm: int
-    min_spacing_mm: int
-    page_margin_mm: int
+    image_diameter_mm: float
+    margin_width_mm: float
+    border_width_mm: float
+    min_spacing_mm: float
+    page_margin_mm: float
 
     pages: list[list[str]]
 
