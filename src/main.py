@@ -1,5 +1,8 @@
+from pathlib import Path
+
 import numpy as np
 import tomllib
+from fpdf import FPDF
 from PIL import Image
 
 from config import Config, ImageConfig
@@ -30,12 +33,15 @@ def load_image(
     del na, mask
 
     # create solid colour background circle and black border
-    background = background_ellipse((full_width,) * 2, "#000000")
     margin = background_ellipse(
         (image_diameter + 2 * margin_width,) * 2,
         image_config["background"],
     )
-    background.paste(margin, (border_width,) * 2, margin)
+    if border_width > 0:
+        background = background_ellipse((full_width,) * 2, "#000000")
+        background.paste(margin, (border_width,) * 2, margin)
+    else:
+        background = margin
 
     # put image over background
     foreground = Image.new("RGBA", (full_width,) * 2, (0,) * 4)
@@ -57,45 +63,54 @@ def main():
     output = config["output"]
     columns = output["columns"]
     rows = output["rows"]
-    pdf_dpi = output["dpi"]
+    dpi = output["dpi"]
 
-    pdf_width_px = int(8.5 * pdf_dpi)
-    pdf_height_px = int(11 * pdf_dpi)
-    px_per_mm = int(pdf_dpi / 25.4)
+    page_width_mm = 8.5 * 25.4
+    page_height_mm = 11 * 25.4
+    px_per_mm = int(dpi / 25.4)
 
     image_diameter = int(output["image_diameter_mm"] * px_per_mm)
     margin_width = int(output["margin_width_mm"] * px_per_mm)
     border_width = int(output["border_width_mm"] * px_per_mm)
-    min_spacing = int(output["min_spacing_mm"] * px_per_mm)
-    page_margin = int(output["page_margin_mm"] * px_per_mm)
+    min_spacing_mm = output["min_spacing_mm"]
+    page_margin_mm = output["page_margin_mm"]
 
     # width of button in px, including solid-colour margin
     full_width = image_diameter + 2 * (margin_width + border_width)
+    full_width_mm = full_width / px_per_mm
 
     # size of the area allotted to a single button
     # includes empty whitespace around the solid-colour margin
-    cell_width = (pdf_width_px - 2 * page_margin) // columns
-    cell_height = (pdf_height_px - 2 * page_margin) // rows
+    cell_width_mm = (page_width_mm - 2 * page_margin_mm) / columns
+    cell_height_mm = (page_height_mm - 2 * page_margin_mm) / rows
 
     # position of the top left corner of the top left button
-    col_offset = (cell_width - full_width) // 2 + page_margin
-    row_offset = (cell_height - full_width) // 2 + page_margin
+    col_offset_mm = (cell_width_mm - full_width_mm) / 2 + page_margin_mm
+    row_offset_mm = (cell_height_mm - full_width_mm) / 2 + page_margin_mm
 
     # make sure there's clearance between buttons
-    worst_spacing = min(cell_width, cell_height) - full_width
-    if worst_spacing < min_spacing:
+    worst_spacing_mm = min(cell_width_mm, cell_height_mm) - full_width_mm
+    if worst_spacing_mm < min_spacing_mm:
         raise Exception(
-            f"Buttons are too close together (want {min_spacing}, got {worst_spacing})"
+            f"Buttons are too close together (want {min_spacing_mm}, got {worst_spacing_mm})"
         )
 
-    # load all the images from files
-    images = {
-        k: load_image(i, image_diameter, margin_width, border_width, full_width)
-        for k, i in config["images"].items()
-    }
+    # load all the images, process them, and save the processed versions to disk
+    images: dict[str, str] = {}
+    Path("build").mkdir(exist_ok=True)
+    for key, image_config in config["images"].items():
+        filename = f"build/{key}.png"
+        load_image(
+            image_config,
+            image_diameter,
+            margin_width,
+            border_width,
+            full_width,
+        ).save(filename)
+        images[key] = filename
 
     buttons_per_page = columns * rows
-    pdf_pages: list[Image.Image] = []
+    pdf = FPDF("P", "mm", (page_width_mm, page_height_mm))
 
     # generate all the pages
     for page_keys in output["pages"]:
@@ -106,19 +121,21 @@ def main():
             )
 
         # create new pdf page
-        page = Image.new("RGB", (pdf_width_px, pdf_height_px), (255,) * 4)
-        column, row = 0, 0
+        pdf.add_page()
+        pdf.set_margins(page_margin_mm, page_margin_mm, page_margin_mm)
 
         # add a roughly equal amount of each button
+        column, row = 0, 0
         for count, key in zip(int_groups(buttons_per_page, len(page_keys)), page_keys):
-            image = images[key]
             for _ in range(count):
                 # paste the current button onto the page
-                box = (
-                    column * cell_width + col_offset,
-                    row * cell_height + row_offset,
+                pdf.image(
+                    images[key],
+                    x=column * cell_width_mm + col_offset_mm,
+                    y=row * cell_height_mm + row_offset_mm,
+                    w=full_width_mm,
+                    h=full_width_mm,
                 )
-                page.paste(image, box, image)
 
                 # move to the next position
                 column += 1
@@ -126,18 +143,8 @@ def main():
                     column = 0
                     row += 1
 
-        # add the finished page to the list
-        pdf_pages.append(page)
-
-    # save all pages in a single pdf by saving the first one and appending the rest
-    pdf_pages[0].save(
-        "buttons.pdf",
-        save_all=True,
-        append_images=pdf_pages[1:],
-        resolution=pdf_dpi,
-        optimize=True,
-        quality=60,
-    )
+    # save the completed pdf
+    pdf.output("buttons.pdf")
 
 
 if __name__ == "__main__":
