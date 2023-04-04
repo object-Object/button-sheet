@@ -57,17 +57,17 @@ def main():
     output = config["output"]
     columns = output["columns"]
     rows = output["rows"]
-    px_per_mm = output["px_per_mm"]
+    pdf_dpi = output["dpi"]
+
+    pdf_width_px = int(8.5 * pdf_dpi)
+    pdf_height_px = int(11 * pdf_dpi)
+    px_per_mm = int(pdf_dpi / 25.4)
 
     image_diameter = int(output["image_diameter_mm"] * px_per_mm)
     margin_width = int(output["margin_width_mm"] * px_per_mm)
     border_width = int(output["border_width_mm"] * px_per_mm)
     min_spacing = int(output["min_spacing_mm"] * px_per_mm)
     page_margin = int(output["page_margin_mm"] * px_per_mm)
-
-    pdf_dpi = 25.4 * px_per_mm
-    pdf_width_px = int(8.5 * pdf_dpi)
-    pdf_height_px = int(11 * pdf_dpi)
 
     # width of button in px, including solid-colour margin
     full_width = image_diameter + 2 * (margin_width + border_width)
@@ -135,6 +135,8 @@ def main():
         save_all=True,
         append_images=pdf_pages[1:],
         resolution=pdf_dpi,
+        optimize=True,
+        quality=60,
     )
 
 

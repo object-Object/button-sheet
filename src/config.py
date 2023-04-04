@@ -10,7 +10,7 @@ class OutputConfig(TypedDict):
     rows: int
     columns: int
 
-    px_per_mm: int
+    dpi: int
 
     image_diameter_mm: float
     margin_width_mm: float
