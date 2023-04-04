@@ -19,6 +19,7 @@ image2 = { filename = "path/to/image2.png", background = "#FFFFFF" }
 rows = 5    # number of rows of buttons per page
 columns = 3 # number of columns of buttons per page
 
+px_per_mm = 12         # 12 px/mm ~ 300 DPI, 24 px/mm ~ 600 DPI
 image_diameter_mm = 37 # diameter of the actual image to print on the buttons
 margin_width_mm = 6    # width of the solid colour margin on one side (eg. 37 mm diameter and 6 mm margin -> 49 mm total)
 border_width_mm = 0.5  # width of the black border around the edges of the buttons (set to 0 to disable)

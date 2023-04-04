@@ -5,13 +5,6 @@ from PIL import Image
 from config import Config, ImageConfig
 from draw import background_ellipse, ellipse_mask
 
-# 24 px/mm is about 600 dpi, i think
-PX_PER_MM = 24
-
-PDF_DPI = 25.4 * PX_PER_MM
-PDF_WIDTH_PX = int(8.5 * PDF_DPI)
-PDF_HEIGHT_PX = int(11 * PDF_DPI)
-
 
 def load_image(
     image_config: ImageConfig,
@@ -62,21 +55,27 @@ def main():
 
     # extract sizing from config
     output = config["output"]
-    image_diameter = int(output["image_diameter_mm"] * PX_PER_MM)
-    margin_width = int(output["margin_width_mm"] * PX_PER_MM)
-    border_width = int(output["border_width_mm"] * PX_PER_MM)
-    min_spacing = int(output["min_spacing_mm"] * PX_PER_MM)
-    page_margin = int(output["page_margin_mm"] * PX_PER_MM)
     columns = output["columns"]
     rows = output["rows"]
+    px_per_mm = output["px_per_mm"]
+
+    image_diameter = int(output["image_diameter_mm"] * px_per_mm)
+    margin_width = int(output["margin_width_mm"] * px_per_mm)
+    border_width = int(output["border_width_mm"] * px_per_mm)
+    min_spacing = int(output["min_spacing_mm"] * px_per_mm)
+    page_margin = int(output["page_margin_mm"] * px_per_mm)
+
+    pdf_dpi = 25.4 * px_per_mm
+    pdf_width_px = int(8.5 * pdf_dpi)
+    pdf_height_px = int(11 * pdf_dpi)
 
     # width of button in px, including solid-colour margin
     full_width = image_diameter + 2 * (margin_width + border_width)
 
     # size of the area allotted to a single button
     # includes empty whitespace around the solid-colour margin
-    cell_width = (PDF_WIDTH_PX - 2 * page_margin) // columns
-    cell_height = (PDF_HEIGHT_PX - 2 * page_margin) // rows
+    cell_width = (pdf_width_px - 2 * page_margin) // columns
+    cell_height = (pdf_height_px - 2 * page_margin) // rows
 
     # position of the top left corner of the top left button
     col_offset = (cell_width - full_width) // 2 + page_margin
@@ -107,7 +106,7 @@ def main():
             )
 
         # create new pdf page
-        page = Image.new("RGB", (PDF_WIDTH_PX, PDF_HEIGHT_PX), (255,) * 4)
+        page = Image.new("RGB", (pdf_width_px, pdf_height_px), (255,) * 4)
         column, row = 0, 0
 
         # add a roughly equal amount of each button
@@ -135,7 +134,7 @@ def main():
         "buttons.pdf",
         save_all=True,
         append_images=pdf_pages[1:],
-        resolution=PDF_DPI,
+        resolution=pdf_dpi,
     )
 
 
