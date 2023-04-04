@@ -52,4 +52,4 @@ Intermediate images are placed in `build/` and may be overwritten. The final pdf
   * NOTE: venv is mandatory for this step to limit the amount of libraries added to the executable
 * Generate the executable: `pyinstaller main.spec`
 
-The resulting executable will be in `dist/`, eg: `dist/button-sheet-Windows-AMD64/button-sheet-Windows-AMD64.exe`
+The resulting executable will be in `dist/`, eg: `dist/button-sheet-Windows-AMD64.exe`

@@ -56,6 +56,7 @@ def int_groups(n: int, num_groups: int):
 
 def main():
     # load the config that says what to actually generate
+    print("Loading config...")
     with open("config.toml", "rb") as f:
         config = Config(**tomllib.load(f))
 
@@ -96,6 +97,7 @@ def main():
         )
 
     # load all the images, process them, and save the processed versions to disk
+    print("Processing images...")
     images: dict[str, str] = {}
     Path("build").mkdir(exist_ok=True)
     for key, image_config in config["images"].items():
@@ -113,8 +115,9 @@ def main():
     pdf = FPDF("P", "mm", (page_width_mm, page_height_mm))
 
     # generate all the pages
-    for page_keys in output["pages"]:
+    for i, page_keys in enumerate(output["pages"]):
         # ensure we can actually fit all the buttons we want to
+        print(f"Generating page {i + 1}/{len(output['pages'])}...")
         if len(page_keys) > buttons_per_page:
             raise Exception(
                 f"Too many buttons (need <={buttons_per_page}, got {len(page_keys)}): {page_keys}"
@@ -144,7 +147,9 @@ def main():
                     row += 1
 
     # save the completed pdf
+    print("Writing pdf...")
     pdf.output("buttons.pdf")
+    print("Done.")
 
 
 if __name__ == "__main__":
